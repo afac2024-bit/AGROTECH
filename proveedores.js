@@ -1,14 +1,16 @@
+
 const Modulo = require('./modulo');
-
+ 
 class Proveedores extends Modulo {
-
+ 
     constructor() {
-        super('Proveedores');
+        super('Proveedores', 'Proveedores');
     }
-
+ 
     mostrar(item) {
         return `ID: ${item.id} | Nombre: ${item.nombre} | Producto: ${item.producto} | Teléfono: ${item.telefono}`;
     }
 }
-
+ 
 module.exports = Proveedores;
+ 
