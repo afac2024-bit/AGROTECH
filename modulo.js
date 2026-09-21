@@ -1,43 +1,56 @@
+const { poolPromise, sql } = require('./db');
+ 
 class Modulo {
-
-    constructor(nombre) {
+ 
+    constructor(nombre, tabla) {
         this.nombre = nombre;
-        this.datos = [];
+        this.tabla = tabla; 
     }
-
-    agregar(item) {
-        item.id = this.datos.length > 0
-            ? this.datos[this.datos.length - 1].id + 1
-            : 1;
-        this.datos.push(item);
-        console.log(`\n${this.nombre}: registro agregado con id ${item.id}`);
+ 
+    async agregar(item) {
+        const pool = await poolPromise;
+        const request = pool.request();
+        const columnas = Object.keys(item);
+ 
+        columnas.forEach(col => request.input(col, item[col]));
+ 
+        const query = `INSERT INTO ${this.tabla} (${columnas.join(', ')})
+                        VALUES (${columnas.map(c => '@' + c).join(', ')})`;
+ 
+        await request.query(query);
+        console.log(`\n${this.nombre}: registro agregado`);
     }
-
-    eliminar(id) {
-        const existia = this.datos.some(d => d.id === id);
-        this.datos = this.datos.filter(d => d.id !== id);
-
-        if (existia) {
+ 
+    async eliminar(id) {
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('id', sql.Int, id)
+            .query(`DELETE FROM ${this.tabla} WHERE id = @id`);
+ 
+        if (result.rowsAffected[0] > 0) {
             console.log(`\n${this.nombre}: registro ${id} eliminado`);
         } else {
             console.log(`\n${this.nombre}: no existe un registro con id ${id}`);
         }
     }
-
-    listar() {
+ 
+    async listar() {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`SELECT * FROM ${this.tabla}`);
+ 
         console.log(`\n--- ${this.nombre} ---`);
-
-        if (this.datos.length === 0) {
+ 
+        if (result.recordset.length === 0) {
             console.log('(sin registros todavía)');
             return;
         }
 
-        this.datos.forEach(item => console.log(this.mostrar(item)));
+        result.recordset.forEach(item => console.log(this.mostrar(item)));
     }
-
+ 
     mostrar(item) {
         return JSON.stringify(item);
     }
 }
-
+ 
 module.exports = Modulo;
